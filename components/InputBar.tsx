@@ -1,4 +1,3 @@
-// app/components/InputBar.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -13,7 +12,8 @@ export default function InputBar() {
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  // 키보드 높이 추정 → --kb-shift 업데이트
+  // (선택) 키보드 높이 추정 → --kb-shift 업데이트
+  // KeyboardInsets 컴포넌트를 이미 쓰고 있다면, 이 블록은 남겨도/지워도 OK.
   useEffect(() => {
     const root = document.documentElement;
     const vv = window.visualViewport;
@@ -21,7 +21,6 @@ export default function InputBar() {
     const update = () => {
       if (!vv) return;
       const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      // 입력바를 위로 올리기(음수 적용)
       root.style.setProperty("--kb-shift", `${-kb}px`);
     };
 
@@ -38,8 +37,7 @@ export default function InputBar() {
   return (
     <div
       ref={wrapRef}
-      className="fixed left-1/2 -translate-x-1/2 bottom-0 z-10 w-[min(980px,100vw)] bg-panel/95 backdrop-blur-md p-3 rounded-t-2xl"
-      style={{ transform: "translate(-50%, var(--kb-shift, 0px))" }}
+      className="w-full max-w-[980px] mx-auto bg-panel/95 backdrop-blur-md p-3 rounded-xl shadow-lg"
     >
       <form
         className="flex gap-2"
@@ -60,7 +58,6 @@ export default function InputBar() {
       >
         <input
           name="word"
-          // 모바일 자동 확대 방지(>=16px), 베트남어 입력 친화 옵션
           className="flex-1 bg-panel2 text-white rounded-xl px-4 py-3 text-[16px] md:text-lg border border-black/30 outline-none"
           placeholder="Gõ từ rồi Enter…"
           inputMode="text"
@@ -69,7 +66,6 @@ export default function InputBar() {
           autoComplete="off"
           spellCheck={false}
           onFocus={() => {
-            // iOS 사파리 주소창/툴바 수축 유도
             try {
               window.scrollTo({ top: 0, behavior: "auto" });
             } catch {
