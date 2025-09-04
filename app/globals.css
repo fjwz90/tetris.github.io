@@ -2,16 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* -------- design tokens -------- */
 :root{
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --kb: 0px;        /* 모바일 키보드 높이 (JS가 갱신) */
+  --bar-h: 64px;    /* 입력바 높이 (초기값, JS가 실측값으로 덮어씀) */
 }
 html, body { height: 100%; }
-/* globals.css */
+
+/* 전역 배경/문자색 (tailwind theme()는 따옴표 필수) */
 body {
   background: theme('colors.bg');
   color: theme('colors.text');
 }
 
+/* -------- starfield / deco -------- */
 .starfield,
 .starfield:before,
 .starfield:after{
@@ -64,22 +69,29 @@ body {
   animation: shipFloat 6s ease-in-out infinite;
 }
 
-:root{ --kb: 0px; --safe-bottom: env(safe-area-inset-bottom, 0px); }
+/* -------- layout helpers -------- */
 
+/* 전체 화면을 dvh 기준으로 채우는 컨테이너 */
+.screen { min-height: 100dvh; }
 
-/* 키보드가 떠도 캔버스가 보이게 하는 래퍼 */
-/* 기본은 영향 없음(데스크톱) */
+/* 게임 영역: “입력바 + safe-area”만큼을 제외한 남는 높이를 전부 사용 */
+.stage-wrap{
+  height: calc(100dvh - var(--bar-h) - var(--safe-bottom));
+  min-height: 0;
+  overflow: hidden;
+}
 
-.kb-avoid{ min-height: 0; }
+/* 하단 고정 입력바 컨테이너 (실제 배경/모양은 컴포넌트 내부에서) */
+.typebar-fixed{
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(980px, 100vw);
+  z-index: 50;
+  pointer-events: auto;
+}
 
-@media (max-width: 767px) {
-  .kb-avoid{
-    height: calc(100dvh - var(--kb) - var(--safe-bottom));
-    min-height: 0;
-    overflow: hidden;
-  }
-} /* ✅ medi
-/* 하단 고정 입력바 레이아웃(배경/패딩만 잡음, 나머지는 Tailwind로) */
+/* (선택) .typebar 클래스를 쓰고 있었다면 계속 사용 가능
 .typebar{
   position: sticky;
   bottom: 0;
@@ -88,3 +100,9 @@ body {
   border-top: 1px solid rgba(255,255,255,.06);
   padding-bottom: calc(8px + var(--safe-bottom));
 }
+*/
+
+/* -------- animations (기존과 동일) -------- */
+@keyframes starDrift { from { transform: translateY(0); } to { transform: translateY(-6vh); } }
+@keyframes twinkle { 0%,100%{ opacity:.4 } 50%{ opacity:.9 } }
+@keyframes shipFloat { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-6px) } }

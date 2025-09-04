@@ -12,31 +12,43 @@ export default function InputBar() {
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  // 보조: visualViewport로 --kb-shift 갱신 (KeyboardInsets를 쓰고 있으면 두 값이 같게 유지)
   useEffect(() => {
     const root = document.documentElement;
     const vv = window.visualViewport;
 
-    const update = () => {
+    const updateKb = () => {
       if (!vv) return;
       const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       root.style.setProperty("--kb", `${kb}px`);
-      root.style.setProperty("--kb-shift", `${-kb}px`);
     };
 
-    update();
-    vv?.addEventListener("resize", update);
-    vv?.addEventListener("scroll", update);
+    const updateBarH = () => {
+      if (wrapRef.current) {
+        root.style.setProperty("--bar-h", `${wrapRef.current.offsetHeight}px`);
+      }
+    };
+
+    updateKb();
+    updateBarH();
+
+    vv?.addEventListener("resize", updateKb);
+    vv?.addEventListener("scroll", updateKb);
+
+    const ro = new ResizeObserver(updateBarH);
+    if (wrapRef.current) ro.observe(wrapRef.current);
+    window.addEventListener("resize", updateBarH);
+
     return () => {
-      vv?.removeEventListener("resize", update);
-      vv?.removeEventListener("scroll", update);
+      vv?.removeEventListener("resize", updateKb);
+      vv?.removeEventListener("scroll", updateKb);
+      ro.disconnect();
+      window.removeEventListener("resize", updateBarH);
       root.style.setProperty("--kb", "0px");
-      root.style.setProperty("--kb-shift", "0px");
+      // bar-h는 남겨도 무방 (레이아웃 안정성)
     };
   }, []);
 
   return (
-    // fixed/bottom-0 제거 → 부모(grid 3행)의 마지막 행에 자연스럽게 배치
     <div
       ref={wrapRef}
       className="w-full max-w-[980px] mx-auto bg-panel/95 backdrop-blur-md p-3 rounded-xl shadow-lg"
@@ -69,6 +81,7 @@ export default function InputBar() {
           autoComplete="off"
           spellCheck={false}
           onFocus={() => {
+            // iOS 주소창/툴바 수축 유도
             try {
               window.scrollTo({ top: 0, behavior: "auto" });
             } catch {
