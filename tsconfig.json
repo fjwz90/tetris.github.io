@@ -11,7 +11,11 @@
     "noEmit": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": ["node", "react", "react-dom"]
+    "types": ["node", "react", "react-dom"],
+     "baseUrl": ".",
+      "paths": {
+      "@/*": ["*"]
+    }
   },
   "include": ["app", "components", "hooks", "state"]
 }
