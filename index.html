@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Mưa Từ — Chế độ Giai đoạn</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -11,17 +11,37 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0}
-    body{font-family:"Noto Sans",system-ui,"Segoe UI",Roboto,Helvetica,Arial,"Apple SD Gothic Neo",sans-serif;background:var(--bg);color:var(--text);}
-    .wrap{max-width:980px;margin:0 auto;padding:16px;}
+    body{
+      font-family:"Noto Sans",system-ui,"Segoe UI",Roboto,Helvetica,Arial,"Apple SD Gothic Neo",sans-serif;
+      background:var(--bg);color:var(--text);
+      -webkit-text-size-adjust:100%;
+      touch-action:manipulation;
+      overscroll-behavior:contain;
+    }
+    .wrap{
+      max-width:980px;margin:0 auto;padding:16px;
+      min-height:100dvh; display:flex; flex-direction:column;
+      padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+    }
     header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
     header h1{font-size:18px;margin:0;color:#fff}
     .hud{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--panel);padding:8px 12px;border-radius:10px;margin-bottom:8px}
     .hud .stat{opacity:.95}
+    /* Canvas holder grows to fill vertical space */
+    .stage{position:relative; flex:1; display:flex; min-height:0}
     canvas{display:block;width:100%;height:520px;background:linear-gradient(#0f1319,#0c0f14);border:1px solid #0006;border-radius:14px}
     .inputbar{margin-top:8px;background:var(--panel);padding:12px;border-radius:12px}
     .inputrow{display:flex;gap:8px;align-items:center}
-    .inputrow input{flex:1;border:1px solid #0003;background:var(--panel2);color:var(--text);padding:10px 12px;border-radius:10px;font-size:16px;outline:none}
-    .inputrow button{border:none;background:var(--accent);color:#001422;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+    .inputrow input{
+      flex:1;border:1px solid #0003;background:var(--panel2);color:var(--text);
+      padding:12px 14px;border-radius:10px;font-size:18px; /* >=16px to prevent iOS zoom */
+      outline:none; -webkit-appearance:none;
+    }
+    .inputrow button{
+      border:none;background:var(--accent);color:#001422;
+      padding:12px 16px;border-radius:10px;font-weight:700;cursor:pointer;
+      font-size:18px; -webkit-appearance:none;
+    }
     .footer{opacity:.7;margin-top:10px;font-size:13px}
     .badge{padding:4px 8px;border-radius:8px;background:#00000033}
     .gameover{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
@@ -29,6 +49,39 @@
     .card h2{margin:0 0 12px}
     .card .row{margin:6px 0}
     .show{display:flex}
+
+    /* === Responsive (iPhone 15) === */
+    @media (max-width: 430px){
+      .wrap{padding:12px}
+      header h1{font-size:16px}
+      .hud{
+        flex-wrap:wrap; row-gap:6px; column-gap:8px; padding:8px 10px;
+      }
+      .hud .stat{
+        flex:1 1 calc(50% - 8px);
+        font-size:14px;
+        white-space:nowrap;
+      }
+      /* Make canvas height adapt to viewport (keyboard-aware) */
+      canvas{
+        height:clamp(260px, 48dvh, 520px);
+      }
+      /* Keep input bar visible above iOS bottom safe area & keyboard */
+      .inputbar{
+        position:sticky; bottom:0; z-index:5;
+        padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+        border-bottom-left-radius:0; border-bottom-right-radius:0;
+      }
+      .inputrow input{font-size:18px;padding:14px}
+      .inputrow button{font-size:18px;padding:14px 16px}
+      .card{width:calc(100vw - 32px)}
+    }
+
+    /* Extra-narrow fallback */
+    @media (max-width: 360px){
+      .hud .stat{font-size:13px}
+      canvas{height:clamp(240px, 44dvh, 520px)}
+    }
   </style>
 </head>
 <body>
@@ -44,7 +97,7 @@
       <div class="stat">WPM: <b id="wpm">0.0</b></div>
     </div>
 
-    <div style="position:relative">
+    <div class="stage">
       <canvas id="game" width="980" height="520"></canvas>
       <div id="gameover" class="gameover">
         <div class="card">
@@ -157,7 +210,7 @@
     'phương hiếm', 'phương thơm', 'phương giòn', 'phương mới', 'phương quen',
     'phương ngây', 'phương tĩnh', 'phương bình', 'phương khích', 'phương nhiệt',
     'phương trẻ', 'phương mát', 'phương dễ thương', 'phương quý phái', 'phương vui vẻ'
-];
+  ];
   let active = [];
   let particles = [];
   let usedIdx = 0;
@@ -196,7 +249,7 @@
 
     const pad = 40;
     const maxAttempts = 24;
-    let attempt = 0, x = randInt(margin, Math.max(margin, W - metrics.width - margin));
+    let attempt = 0, x = randInt(margin, Math.max(margin, cvs.width - metrics.width - margin));
 
     while (attempt < maxAttempts){
       let overlap = false;
@@ -207,7 +260,7 @@
         }
       }
       if (!overlap) break;
-      x = randInt(margin, Math.max(margin, W - metrics.width - margin));
+      x = randInt(margin, Math.max(margin, cvs.width - metrics.width - margin));
       attempt++;
     }
 
@@ -220,20 +273,20 @@
     const minutes = Math.max(1/60, elapsed/60);
     wpmEl.textContent = ((correctChars/5)/minutes).toFixed(1);
     
-    ctx.clearRect(0,0,W,H);
+    ctx.clearRect(0,0,cvs.width,cvs.height);
 
     ctx.textBaseline = 'top';
     ctx.font = '20px ' + fontFamily;
     for (const w of active){
-      const near = (inputTop - (w.y + 22)) < 60;
+      const near = ((cvs.height - 84) - (w.y + 22)) < 60;
       ctx.fillStyle = near ? '#ff8c8c' : '#ececec';
       ctx.fillText(w.text, w.x, w.y);
     }
 
     ctx.fillStyle = '#1e2127';
-    ctx.fillRect(0, inputTop, W, 84);
+    ctx.fillRect(0, cvs.height - 84, cvs.width, 84);
     ctx.fillStyle = '#3c4148';
-    ctx.fillRect(12, inputTop+12, W-24, 84-24);
+    ctx.fillRect(12, cvs.height - 84 + 12, cvs.width-24, 84-24);
 
     particles = particles.filter(p=>p.life>0);
     for (const p of particles){
@@ -248,7 +301,7 @@
       let hit = false;
       for (const w of active){
         w.y += w.spd * dt;
-        if ((w.y + 22) >= inputTop){ hit = true; }
+        if ((w.y + 22) >= (cvs.height - 84)){ hit = true; }
       }
       if (hit){ finalize('hit'); }
       reqId = requestAnimationFrame(draw);
@@ -278,8 +331,7 @@
     stopBGM();
   }
   
-  // --- EDITED SECTION ---
-  // This function now spawns words with a delay between them.
+  // Spawn pacing
   function setupLevel(newLvl) {
     level = newLvl;
     clearedThisLevel = 0;
@@ -299,7 +351,7 @@
         } else {
             clearInterval(spawnIntervalId);
         }
-    }, 600); // Spawn a word every 600ms
+    }, 600);
 
     if (level > 1) {
         playTetrisJingle();
@@ -315,7 +367,7 @@
     scoreEl.textContent = '0';
     wpmEl.textContent = '0.0';
 
-    ctx.clearRect(0,0,W,H);
+    ctx.clearRect(0,0,cvs.width,cvs.height);
     go.classList.remove('show');
   }
 
@@ -462,6 +514,7 @@
     }catch(e){}
   }
 
+  /* Ensure audio resumes on first interaction (iOS) */
   ['pointerdown','keydown'].forEach(evt=>{
     window.addEventListener(evt, ()=>{
         if (audio && audio.state === 'suspended') {
@@ -477,4 +530,3 @@
 </script>
 </body>
 </html>
-
