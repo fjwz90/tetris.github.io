@@ -11,10 +11,9 @@
 html, body { height: 100%; }
 
 /* 전역 배경/문자색 (tailwind theme()는 따옴표 필수) */
-body {
-  background: theme('colors.bg');
-  color: theme('colors.text');
-}
+/* globals.css */
+body { background: theme('colors.bg'); color: theme('colors.text'); }
+
 
 /* -------- starfield / deco -------- */
 .starfield,
