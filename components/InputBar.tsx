@@ -63,7 +63,7 @@ export default function InputBar() {
           // 모바일 자동 확대 방지(>=16px), 베트남어 입력 친화 옵션
           className="flex-1 bg-panel2 text-white rounded-xl px-4 py-3 text-[16px] md:text-lg border border-black/30 outline-none"
           placeholder="Gõ từ rồi Enter…"
-          inputMode="latin"
+          inputMode="text"
           autoCapitalize="off"
           autoCorrect="off"
           autoComplete="off"
