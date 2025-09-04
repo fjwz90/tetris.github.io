@@ -25,7 +25,7 @@ type GameState = {
 
 export const useGameStore = create<GameState>((set, get) => ({
   level: 1,
-  baseSpeed: 35,
+  baseSpeed: 1,
   wordsPerLevel: 4, // Initial value for level 1
   wordsCleared: 0,
   score: 0,
