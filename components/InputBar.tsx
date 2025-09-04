@@ -12,7 +12,7 @@ export default function InputBar() {
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  // KeyboardInsets를 쓰고 있어도 안전하게 동작하도록 보조 업데이트
+  // 보조: visualViewport로 --kb-shift 갱신 (KeyboardInsets를 쓰고 있으면 두 값이 같게 유지)
   useEffect(() => {
     const root = document.documentElement;
     const vv = window.visualViewport;
@@ -20,6 +20,7 @@ export default function InputBar() {
     const update = () => {
       if (!vv) return;
       const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      root.style.setProperty("--kb", `${kb}px`);
       root.style.setProperty("--kb-shift", `${-kb}px`);
     };
 
@@ -29,12 +30,13 @@ export default function InputBar() {
     return () => {
       vv?.removeEventListener("resize", update);
       vv?.removeEventListener("scroll", update);
+      root.style.setProperty("--kb", "0px");
       root.style.setProperty("--kb-shift", "0px");
     };
   }, []);
 
   return (
-    // 🔸 더 이상 fixed 아님 (섹션에서 위치 제어)
+    // fixed/bottom-0 제거 → 부모(grid 3행)의 마지막 행에 자연스럽게 배치
     <div
       ref={wrapRef}
       className="w-full max-w-[980px] mx-auto bg-panel/95 backdrop-blur-md p-3 rounded-xl shadow-lg"
@@ -47,6 +49,7 @@ export default function InputBar() {
             "word"
           ) as HTMLInputElement;
           const val = input.value.trim();
+
           if (gameOver) {
             restart();
             input.value = "";

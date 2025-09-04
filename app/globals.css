@@ -64,10 +64,8 @@ body {
   animation: shipFloat 6s ease-in-out infinite;
 }
 
-:root{
-  --kb: 0px; /* 키보드 높이 (JS가 갱신) */
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
+:root{ --kb: 0px; --safe-bottom: env(safe-area-inset-bottom, 0px); }
+
 
 /* 키보드가 떠도 캔버스가 보이게 하는 래퍼 */
 /* 기본은 영향 없음(데스크톱) */
