@@ -1,13 +1,13 @@
-// app/components/InputBar.tsx
+// components/InputBar.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
 import { useGameStore } from "@/state/game";
 
 export default function InputBar() {
-  const { onSubmit, gameOver, restart } = useGameStore((s) => ({
+  const { onSubmit, gameStatus, restart } = useGameStore((s) => ({
     onSubmit: s.onSubmit,
-    gameOver: s.gameOver,
+    gameStatus: s.gameStatus, // 'gameOver' 대신 'gameStatus'를 가져옵니다.
     restart: s.restart,
   }));
 
@@ -37,7 +37,6 @@ export default function InputBar() {
   }, []);
 
   return (
-    // fixed/bottom-0 사용 안 함 → 페이지 그리드의 마지막 행(입력바 자리)에 자연 배치
     <div
       ref={wrapRef}
       className="w-full max-w-[980px] mx-auto bg-panel/95 backdrop-blur-md p-3 rounded-xl shadow-lg"
@@ -46,10 +45,13 @@ export default function InputBar() {
         className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          const input = e.currentTarget.elements.namedItem("word") as HTMLInputElement;
+          const input = e.currentTarget.elements.namedItem(
+            "word"
+          ) as HTMLInputElement;
           const val = input.value.trim();
 
-          if (gameOver) {
+          // 'gameOver' 대신 'gameStatus'를 확인하여 게임 재시작 여부를 결정합니다.
+          if (gameStatus === "lost" || gameStatus === "won") {
             restart();
             input.value = "";
             return;
@@ -82,7 +84,9 @@ export default function InputBar() {
           Phá
         </button>
       </form>
-      <p className="text-[12px] opacity-70 mt-1">게임 종료 시 Enter로 바로 재시작 가능</p>
+      <p className="text-[12px] opacity-70 mt-1">
+        게임 종료 시 Enter로 바로 재시작 가능
+      </p>
     </div>
   );
 }
