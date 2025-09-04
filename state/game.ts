@@ -1,3 +1,4 @@
+// state/game.ts
 "use client";
 import { create } from "zustand";
 
@@ -26,7 +27,7 @@ type GameState = {
 export const useGameStore = create<GameState>((set, get) => ({
   level: 1,
   baseSpeed: 70,
-  wordsPerLevel: 4, // Initial value for level 1
+  wordsPerLevel: 12, // 초기 단어 수를 12로 수정
   wordsCleared: 0,
   score: 0,
   wpm: 0,
@@ -40,8 +41,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const currentLevel = get().level;
     set({
       level: currentLevel + 1,
-      baseSpeed: 70 + currentLevel * 20, // Speed increases with the new level
-      wordsPerLevel: 4 + currentLevel, // Words increase with the new level
+      baseSpeed: 70 + currentLevel * 20, // 레벨에 따라 속도 증가
+      wordsPerLevel: 12 + currentLevel, // 레벨에 따라 단어 수 증가
       wordsCleared: 0,
       gameStatus: "playing",
     });
@@ -52,7 +53,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       level: 1,
       baseSpeed: 70,
-      wordsPerLevel: 4,
+      wordsPerLevel: 12, // 재시작 시 단어 수도 12로 초기화
       wordsCleared: 0,
       score: 0,
       wpm: 0,

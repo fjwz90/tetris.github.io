@@ -142,16 +142,18 @@ export default function GameCanvas() {
     const W = cvs.clientWidth;
     const H = cvs.clientHeight;
 
+    ctx.clearRect(0, 0, W, H);
+    
+    // 게임 상태가 'playing'이 아닐 경우 WPM 업데이트 및 그리기를 중단합니다.
+    if (gameStatus !== 'playing') {
+        return;
+    }
+
+    // WPM 계산 및 상태 업데이트 로직을 'playing' 상태일 때만 실행하도록 이동
     const elapsed = (performance.now() - startTimeRef.current) / 1000;
     const minutes = Math.max(1 / 60, elapsed / 60);
     const wpm = (correctCharsRef.current / 5) / minutes;
     useGameStore.getState().setWpm(wpm); // 리렌더링 없이 상태 업데이트
-
-    ctx.clearRect(0, 0, W, H);
-    
-    if (gameStatus !== 'playing') {
-        return;
-    }
 
     ctx.textBaseline = "top";
     ctx.font = "20px Noto Sans, system-ui, Arial, sans-serif";
