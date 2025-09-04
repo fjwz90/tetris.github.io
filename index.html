@@ -63,15 +63,25 @@
         white-space:nowrap;
       }
       /* Make canvas height adapt to viewport (keyboard-aware) */
-      canvas{
-        height:clamp(260px, 48dvh, 520px);
-      }
+canvas {
+  display: block;
+  width: 100%;
+  height: clamp(240px, 45dvh, 520px); /* 키보드 고려 */
+  background: linear-gradient(#0f1319,#0c0f14);
+  border: 1px solid #0006;
+  border-radius: 14px;
+}
       /* Keep input bar visible above iOS bottom safe area & keyboard */
-      .inputbar{
-        position:sticky; bottom:0; z-index:5;
-        padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));
-        border-bottom-left-radius:0; border-bottom-right-radius:0;
-      }
+/* 입력창 항상 보이도록 */
+.inputbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--panel);
+  padding: 12px;
+  border-radius: 12px 12px 0 0;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
       .inputrow input{font-size:18px;padding:14px}
       .inputrow button{font-size:18px;padding:14px 16px}
       .card{width:calc(100vw - 32px)}
@@ -526,6 +536,18 @@
     }, {once:true, passive:true});
   });
 
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cvs.getBoundingClientRect();
+  cvs.width = rect.width * dpr;
+  cvs.height = rect.height * dpr;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
+  ctx.scale(dpr, dpr);
+}
+
+// 초기 실행 + 윈도우 리사이즈시 적용
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 })();
 </script>
 </body>
