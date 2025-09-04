@@ -154,7 +154,7 @@ export default function GameCanvas() {
   }
 
   return (
-    <div className="relative h-[clamp(240px,45dvh,520px)] md:h-[520px]">
+    <div className="relative h-full">
       <canvas ref={cvsRef} className="w-full h-full rounded-2xl border border-white/10 bg-gradient-to-b from-slate-950 to-slate-900" />
     </div>
   );
@@ -166,3 +166,4 @@ function randInt(a: number, b: number) {
 function rangesOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
   return Math.max(aStart, bStart) < Math.min(aEnd, bEnd);
 }
+
