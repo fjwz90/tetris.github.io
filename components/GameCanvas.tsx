@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { useCanvasDPR } from "@/hooks/useCanvasDPR";
-import { useGameStore } from "@/state/game";
+import { useCanvasDPR } from "../hooks/useCanvasDPR";
+import { useGameStore } from "../state/game";
 
 type DropWord = { text: string; x: number; y: number; w: number };
 
