@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html, body { height: 100%; }
+body { background: theme(colors.bg); color: theme(colors.text); }
+
+.starfield,
+.starfield:before,
+.starfield:after{
+  position: fixed;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  z-index: -1;
+}
+
+.starfield{
+  background:
+    radial-gradient(2px 2px at 20% 30%, #fff8, #fff0 60%),
+    radial-gradient(1.5px 1.5px at 70% 40%, #fff6, #fff0 60%),
+    radial-gradient(1.2px 1.2px at 40% 80%, #fff5, #fff0 60%),
+    radial-gradient(1.7px 1.7px at 85% 65%, #fff7, #fff0 60%),
+    radial-gradient(1.4px 1.4px at 10% 75%, #fff6, #fff0 60%),
+    radial-gradient(1.6px 1.6px at 55% 15%, #fff8, #fff0 60%),
+    radial-gradient(1.2px 1.2px at 30% 55%, #fff6, #fff0 60%),
+    radial-gradient(1.8px 1.8px at 90% 20%, #fff7, #fff0 60%),
+    radial-gradient(1.2px 1.2px at 60% 90%, #fff6, #fff0 60%);
+  animation: starDrift 60s linear infinite;
+  opacity: .55;
+}
+.starfield:before{
+  background:
+    radial-gradient(1.4px 1.4px at 25% 45%, #fff8, #fff0 60%),
+    radial-gradient(1.2px 1.2px at 65% 25%, #fff7, #fff0 60%),
+    radial-gradient(2px 2px at 75% 75%, #fff9, #fff0 60%),
+    radial-gradient(1.4px 1.4px at 35% 15%, #fff7, #fff0 60%);
+  animation: starDrift 80s linear infinite reverse, twinkle 3.2s ease-in-out infinite;
+  opacity: .6;
+}
+.starfield:after{
+  background:
+    radial-gradient(1px 1px at 15% 60%, #fff6, #fff0 60%),
+    radial-gradient(1.2px 1.2px at 85% 50%, #fff6, #fff0 60%),
+    radial-gradient(1.1px 1.1px at 45% 35%, #fff7, #fff0 60%);
+  animation: starDrift 100s linear infinite, twinkle 2.4s ease-in-out infinite;
+  opacity: .4;
+}
+
+.spaceship {
+  position: fixed;
+  right: clamp(8px, 3vw, 24px);
+  top: clamp(8px, 2.5vw, 16px);
+  z-index: 0;
+  opacity: .85;
+  filter: drop-shadow(0 2px 6px rgba(80,180,255,.35));
+  animation: shipFloat 6s ease-in-out infinite;
+}
