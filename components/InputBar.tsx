@@ -12,8 +12,7 @@ export default function InputBar() {
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  // (선택) 키보드 높이 추정 → --kb-shift 업데이트
-  // KeyboardInsets 컴포넌트를 이미 쓰고 있다면, 이 블록은 남겨도/지워도 OK.
+  // KeyboardInsets를 쓰고 있어도 안전하게 동작하도록 보조 업데이트
   useEffect(() => {
     const root = document.documentElement;
     const vv = window.visualViewport;
@@ -35,6 +34,7 @@ export default function InputBar() {
   }, []);
 
   return (
+    // 🔸 더 이상 fixed 아님 (섹션에서 위치 제어)
     <div
       ref={wrapRef}
       className="w-full max-w-[980px] mx-auto bg-panel/95 backdrop-blur-md p-3 rounded-xl shadow-lg"

@@ -70,12 +70,17 @@ body {
 }
 
 /* 키보드가 떠도 캔버스가 보이게 하는 래퍼 */
-.kb-avoid{
-  height: calc(100dvh - var(--kb) - var(--safe-bottom));
-  min-height: 0;            /* flex/grid 수축 허용 */
-  overflow: hidden;
-}
+/* 기본은 영향 없음(데스크톱) */
 
+.kb-avoid{ min-height: 0; }
+
+@media (max-width: 767px) {
+  .kb-avoid{
+    height: calc(100dvh - var(--kb) - var(--safe-bottom));
+    min-height: 0;
+    overflow: hidden;
+  }
+} /* ✅ medi
 /* 하단 고정 입력바 레이아웃(배경/패딩만 잡음, 나머지는 Tailwind로) */
 .typebar{
   position: sticky;
