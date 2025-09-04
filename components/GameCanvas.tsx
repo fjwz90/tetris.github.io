@@ -1,27 +1,20 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { useCanvasDPR } from "../hooks/useCanvasDPR";
-import { useGameStore } from "../state/game";
+import { useCanvasDPR } from "@/hooks/useCanvasDPR";
+import { useGameStore } from "@/state/game";
 
-type DropWord = { text: string; x: number; y: number; w: number; };
+type DropWord = { text: string; x: number; y: number; w: number };
 
 const WORDS = [
-  "phương đẹp","phương xinh","phương hiền","phương ngoan","phương giỏi",
-  "phương ngọt","phương dễ","phương ngầu","phương quý","phương sang",
-  "phương tươi","phương sáng","phương vui","phương chăm","phương khỏe",
-  "phương nhanh","phương khéo","phương tin","phương ấm","phương dịu",
-  "phương hiếu","phương tinh","phương trong","phương an","phương bền",
-  "phương sâu","phương khôn","phương mềm","phương êm","phương hay",
-  "phương hiếm","phương thơm","phương giòn","phương mới","phương quen",
-  "phương ngây","phương tĩnh","phương bình","phương khích","phương nhiệt",
-  "phương trẻ","phương mát","phương dễ thương","phương quý phái","phương vui vẻ"
+  "phương đẹp","phương xinh","phương hiền","phương ngoan","phương giỏi", "phương ngọt","phương dễ","phương ngầu","phương quý","phương sang", "phương tươi","phương sáng","phương vui","phương chăm","phương khỏe", "phương nhanh","phương khéo","phương tin","phương ấm","phương dịu", "phương hiếu","phương tinh","phương trong","phương an","phương bền", "phương sâu","phương khôn","phương mềm","phương êm","phương hay", "phương hiếm","phương thơm","phương giòn","phương mới","phương quen", "phương ngây","phương tĩnh","phương bình","phương khích","phương nhiệt", "phương trẻ","phương mát","phương dễ thương","phương quý phái","phương vui vẻ"
 ];
 
 export default function GameCanvas() {
   const cvsRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const rafRef = useRef<number | null>(null);
-  const spawnTimerRef = useRef<number | null>(null);
+  const spawnTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const levelClearTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const measureRef = useRef<(t: string) => number>(() => 0);
   const wordsRef = useRef<DropWord[]>([]);
@@ -29,18 +22,15 @@ export default function GameCanvas() {
   const startTimeRef = useRef<number>(0);
   const correctCharsRef = useRef<number>(0);
 
-  const { setWpm, setGameOver, gameOver, restartSignal, setSubmit, nextLevel,
-          wordsPerLevel, wordsCleared, incCleared, addScore,
-          baseSpeed, level } = useGameStore(s => ({
-            setWpm: s.setWpm, setGameOver: s.setGameOver, gameOver: s.gameOver,
-            restartSignal: s.restartSignal, setSubmit: s.setSubmit,
-            nextLevel: s.nextLevel, wordsPerLevel: s.wordsPerLevel,
-            wordsCleared: s.wordsCleared, incCleared: s.incCleared,
-            addScore: s.addScore, baseSpeed: s.baseSpeed, level: s.level
-          }));
+  const {
+    gameStatus, setGameStatus, restartSignal, setSubmit, nextLevel,
+    wordsPerLevel, wordsCleared, incCleared, addScore,
+    baseSpeed, level
+  } = useGameStore(s => s);
 
   useCanvasDPR(cvsRef);
 
+  // 캔버스 초기 설정
   useEffect(() => {
     const cvs = cvsRef.current!;
     const ctx = cvs.getContext("2d")!;
@@ -54,34 +44,57 @@ export default function GameCanvas() {
     };
   }, []);
 
+  // 단어 제출 로직
   useEffect(() => {
     const submit = (typed: string) => {
-      if (!typed) return;
-      if (gameOver) return;
+      if (!typed || gameStatus !== 'playing') return;
+      
       const arr = wordsRef.current;
       const idx = arr.findIndex(w => w.text === typed);
+
       if (idx !== -1) {
-        const w = arr[idx];
         arr.splice(idx, 1);
         correctCharsRef.current += typed.length;
-        addScore(1);
+        addScore(typed.length);
         incCleared();
-        if (wordsCleared + 1 >= wordsPerLevel) {
-          nextLevel();
-        }
       }
     };
     setSubmit(submit);
-  }, [gameOver, wordsCleared, wordsPerLevel, nextLevel, incCleared, addScore, setSubmit]);
+  }, [gameStatus, addScore, incCleared, setSubmit]);
 
+  // 레벨 시작 로직
   useEffect(() => {
     wordsRef.current = [];
-    availableWordsRef.current = [...WORDS];
+    if (level === 1) {
+        availableWordsRef.current = [...WORDS];
+    }
     correctCharsRef.current = 0;
     startTimeRef.current = performance.now();
+    
+    if (spawnTimerRef.current) clearInterval(spawnTimerRef.current);
+    if (levelClearTimerRef.current) clearTimeout(levelClearTimerRef.current);
 
-    if (spawnTimerRef.current) window.clearInterval(spawnTimerRef.current);
-    spawnTimerRef.current = window.setInterval(() => spawnWord(), 1000);
+    const wordsToSpawnThisLevel: string[] = [];
+    for (let i = 0; i < wordsPerLevel; i++) {
+        if (availableWordsRef.current.length === 0) break;
+        const wordIndex = Math.floor(Math.random() * availableWordsRef.current.length);
+        wordsToSpawnThisLevel.push(availableWordsRef.current.splice(wordIndex, 1)[0]);
+    }
+    
+    if (wordsToSpawnThisLevel.length === 0 && wordsRef.current.length === 0) {
+        setGameStatus('won');
+        return;
+    }
+
+    let spawnCount = 0;
+    spawnTimerRef.current = setInterval(() => {
+        if (spawnCount < wordsToSpawnThisLevel.length) {
+            spawnWord(wordsToSpawnThisLevel[spawnCount]);
+            spawnCount++;
+        } else {
+            if (spawnTimerRef.current) clearInterval(spawnTimerRef.current);
+        }
+    }, 1500); // 1.5초마다 단어 생성
 
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     const step = () => { draw(); rafRef.current = requestAnimationFrame(step); };
@@ -90,80 +103,74 @@ export default function GameCanvas() {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (spawnTimerRef.current) clearInterval(spawnTimerRef.current);
+      if (levelClearTimerRef.current) clearTimeout(levelClearTimerRef.current);
     };
-  }, [restartSignal]);
+  }, [restartSignal, level, wordsPerLevel, setGameStatus, setSubmit]);
 
-  function spawnWord() {
-    if (availableWordsRef.current.length === 0) {
-        if (wordsRef.current.length === 0) {
-            setGameOver(true);
-        }
-        return;
-    }
+  // 레벨 클리어 조건 확인
+  useEffect(() => {
+      if (gameStatus === 'playing' && wordsCleared > 0 && wordsCleared === wordsPerLevel) {
+          if (wordsRef.current.length === 0) {
+            setGameStatus('level_clear');
+          }
+      }
+  }, [wordsCleared, wordsPerLevel, gameStatus, setGameStatus]);
 
-    const cvs = cvsRef.current!;
+  // 레벨 클리어 후 다음 레벨로 전환
+  useEffect(() => {
+      if (gameStatus === 'level_clear') {
+          levelClearTimerRef.current = setTimeout(() => {
+              nextLevel();
+          }, 2000); // 2초 후 다음 레벨
+      }
+  }, [gameStatus, nextLevel]);
+
+  function spawnWord(text: string) {
+    if (!cvsRef.current) return;
+    const cvs = cvsRef.current;
     const MARGIN = 24;
-    const PAD = 40;
-    
-    const wordIndex = Math.floor(Math.random() * availableWordsRef.current.length);
-    const text = availableWordsRef.current[wordIndex];
-    availableWordsRef.current.splice(wordIndex, 1);
-
     const w = measureRef.current(text);
     const maxX = Math.max(MARGIN, cvs.clientWidth - w - MARGIN);
-    let attempts = 0;
-    let x = randInt(MARGIN, maxX);
-    while (attempts < 30) {
-      let overlap = false;
-      for (const it of wordsRef.current) {
-        if (rangesOverlap(x - PAD, x + w + PAD, it.x - PAD, it.x + it.w + PAD)) {
-          overlap = true; break;
-        }
-      }
-      if (!overlap) break;
-      x = randInt(MARGIN, maxX);
-      attempts++;
-    }
-    wordsRef.current.push({ text, x, y: -30 - randInt(0, 60), w });
+    const x = randInt(MARGIN, maxX);
+    wordsRef.current.push({ text, x, y: -30, w });
   }
 
   function draw() {
-    const cvs = cvsRef.current!;
-    const ctx = ctxRef.current!;
+    if (!ctxRef.current || !cvsRef.current) return;
+    const cvs = cvsRef.current;
+    const ctx = ctxRef.current;
     const W = cvs.clientWidth;
     const H = cvs.clientHeight;
 
     const elapsed = (performance.now() - startTimeRef.current) / 1000;
     const minutes = Math.max(1 / 60, elapsed / 60);
     const wpm = (correctCharsRef.current / 5) / minutes;
-    setWpm(wpm);
+    useGameStore.getState().setWpm(wpm); // 리렌더링 없이 상태 업데이트
 
     ctx.clearRect(0, 0, W, H);
+    
+    if (gameStatus !== 'playing') {
+        return;
+    }
+
     ctx.textBaseline = "top";
     ctx.font = "20px Noto Sans, system-ui, Arial, sans-serif";
 
     const dt = 1 / 60;
     const speed = baseSpeed;
-
     let hit = false;
+
     for (const w of wordsRef.current) {
       w.y += speed * dt;
-      const near = ((H - 84) - (w.y + 22)) < 60;
+      const near = (H - w.y) < 150;
       ctx.fillStyle = near ? "#ff8c8c" : "#ececec";
       ctx.fillText(w.text, w.x, w.y);
-      if (w.y + 22 >= (H - 84)) { hit = true; }
+      if (w.y + 22 >= H) { hit = true; }
     }
-
+    
     if (hit) {
-      setGameOver(true);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (spawnTimerRef.current) clearInterval(spawnTimerRef.current);
+      setGameStatus('lost');
     }
-
-    ctx.fillStyle = "#1e2127";
-    ctx.fillRect(0, H - 84, W, 84);
-    ctx.fillStyle = "#3c4148";
-    ctx.fillRect(12, H - 84 + 12, W - 24, 84 - 24);
   }
 
   return (
@@ -176,6 +183,4 @@ export default function GameCanvas() {
 function randInt(a: number, b: number) {
   return Math.floor(a + Math.random() * (b - a + 1));
 }
-function rangesOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
-  return Math.max(aStart, bStart) < Math.min(aEnd, bEnd);
-}
+
