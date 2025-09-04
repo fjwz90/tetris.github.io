@@ -24,7 +24,7 @@ type GameState = {
 
 export const useGameStore = create<GameState>((set, get) => ({
   level: 1,
-  baseSpeed: 140,
+  baseSpeed: 70,
   wordsPerLevel: 12,
   wordsCleared: 0,
   score: 0,
@@ -37,7 +37,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   setSubmit: (fn) => set({ onSubmit: fn }),
   nextLevel: () => {
     const lv = get().level + 1;
-    const newSpeed = 140 + (lv - 1) * 40;
+    const newSpeed = 70 + (lv - 1) * 20;
     set({ level: lv, baseSpeed: newSpeed, wordsCleared: 0 });
   },
   incCleared: () => set(s => ({ wordsCleared: s.wordsCleared + 1 })),
@@ -45,7 +45,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   restart: () => {
     set({
       level: 1,
-      baseSpeed: 140,
+      baseSpeed: 70,
       wordsCleared: 0,
       score: 0,
       wpm: 0,

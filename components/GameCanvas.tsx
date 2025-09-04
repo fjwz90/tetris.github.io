@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { useCanvasDPR } from "@/hooks/useCanvasDPR";
-import { useGameStore } from "@/state/game";
+import { useCanvasDPR } from "../hooks/useCanvasDPR";
+import { useGameStore } from "../state/game";
 
 type DropWord = { text: string; x: number; y: number; w: number; };
 
@@ -25,6 +25,7 @@ export default function GameCanvas() {
 
   const measureRef = useRef<(t: string) => number>(() => 0);
   const wordsRef = useRef<DropWord[]>([]);
+  const availableWordsRef = useRef<string[]>([]);
   const startTimeRef = useRef<number>(0);
   const correctCharsRef = useRef<number>(0);
 
@@ -75,6 +76,7 @@ export default function GameCanvas() {
 
   useEffect(() => {
     wordsRef.current = [];
+    availableWordsRef.current = [...WORDS];
     correctCharsRef.current = 0;
     startTimeRef.current = performance.now();
 
@@ -92,10 +94,21 @@ export default function GameCanvas() {
   }, [restartSignal]);
 
   function spawnWord() {
+    if (availableWordsRef.current.length === 0) {
+        if (wordsRef.current.length === 0) {
+            setGameOver(true);
+        }
+        return;
+    }
+
     const cvs = cvsRef.current!;
     const MARGIN = 24;
     const PAD = 40;
-    const text = WORDS[Math.floor(Math.random() * WORDS.length)];
+    
+    const wordIndex = Math.floor(Math.random() * availableWordsRef.current.length);
+    const text = availableWordsRef.current[wordIndex];
+    availableWordsRef.current.splice(wordIndex, 1);
+
     const w = measureRef.current(text);
     const maxX = Math.max(MARGIN, cvs.clientWidth - w - MARGIN);
     let attempts = 0;
@@ -166,4 +179,3 @@ function randInt(a: number, b: number) {
 function rangesOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
   return Math.max(aStart, bStart) < Math.min(aEnd, bEnd);
 }
-
