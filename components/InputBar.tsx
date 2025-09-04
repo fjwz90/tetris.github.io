@@ -35,7 +35,7 @@ export default function InputBar() {
       >
         <input
           name="word"
-          inputMode="latin"
+          inputMode="text"
           autoCapitalize="off"
           autoCorrect="off"
           autoComplete="off"
