@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Mưa Từ — Giai đoạn</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
-
   <style>
     :root{
       --bg:#101216; --panel:#1e2127; --panel2:#3c4148; --text:#ececec; --accent:#50b4ff; --danger:#ff8c8c;
+      --inputbar-h: 0px; /* JS에서 입력바 실제 높이 주입 */
     }
     /* ===== Base / Layout ===== */
     html, body { height: 100%; }
@@ -51,13 +51,17 @@
     canvas{
       display:block;
       width:100%;
-      height: clamp(240px, 45dvh, 520px);   /* iPhone 키보드 올라오면 자동으로 줄어듦 */
+      height: clamp(240px, 45dvh, 520px);   /* 모바일: 키보드 대비 */
       background: linear-gradient(#0f1319,#0c0f14);
       border: 1px solid #0006;
       border-radius: 14px;
     }
+    /* 데스크탑에서는 고정 520px로 안정화 */
+    @media (min-width: 768px){
+      canvas{ height: 520px; }
+    }
 
-    /* ===== Input Bar (always visible) ===== */
+    /* ===== Input Bar ===== */
     .inputbar{
       position: sticky;
       bottom: 0;
@@ -81,11 +85,28 @@
     .footer{ opacity:.7; margin-top:8px; font-size:13px; }
 
     /* ===== Gameover Card ===== */
-    .gameover{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; }
-    .card{ background:#000a; padding:24px 28px; border-radius:16px; border:1px solid #ffffff22; backdrop-filter: blur(4px); text-align:center; }
+    .gameover{
+      position:absolute; inset:0; display:none;
+      align-items:center; justify-content:center;  /* 기본(모바일): 중앙 */
+      padding: 12px;
+    }
+    .card{
+      background:#000a; padding:24px 28px; border-radius:16px; border:1px solid #ffffff22; backdrop-filter: blur(4px); text-align:center;
+      max-width: 92%;
+    }
     .card h2{ margin:0 0 12px; }
     .card .row{ margin:6px 0; }
     .show{ display:flex; }
+
+    /* 데스크탑: 입력창 바로 위 정렬 */
+    @media (min-width: 768px){
+      .gameover{
+        align-items:flex-end;             /* 아래쪽으로 */
+        justify-content:center;
+        padding-top: 0;
+        padding-bottom: calc(var(--inputbar-h, 0px) + 16px); /* 입력창 위로 16px 여백 */
+      }
+    }
 
     /* Extra-narrow */
     @media (max-width: 360px){
@@ -110,14 +131,17 @@
 
     <div class="stage">
       <canvas id="game"></canvas>
-      <div id="gameover" class="gameover">
+      <div id="gameover" class="gameover" aria-live="polite">
         <div class="card">
           <h2 id="goTitle">THUA RỒI</h2>
           <div class="row">Giai đoạn cuối cùng: <b id="goLevel">1</b></div>
           <div class="row">Từ đúng: <b id="goWords">0</b></div>
           <div class="row">Ký tự đúng: <b id="goChars">0</b></div>
           <div class="row">WPM (chuẩn 5 ký tự): <b id="goWpm">0.0</b></div>
-          <div class="row" style="margin-top:10px"><button id="goRestart">Chơi lại</button></div>
+          <div class="row" style="margin-top:10px">
+            <button id="goRestart">Chơi lại</button>
+            <div style="font-size:12px;opacity:.8;margin-top:6px">Nhấn Enter để chơi lại</div>
+          </div>
         </div>
       </div>
     </div>
@@ -149,11 +173,13 @@
     const goWpm = document.getElementById('goWpm');
     const goRestart = document.getElementById('goRestart');
     const fireBtn = document.getElementById('fireBtn');
+    const inputbarEl = document.querySelector('.inputbar');
+    const root = document.documentElement;
 
     const fontFamily = 'Noto Sans, system-ui, Arial, sans-serif';
 
     /* ===== Retina 선명도: CSS px ↔ Canvas px 분리 ===== */
-    let VIEW_W = 0, VIEW_H = 0;  // CSS pixel 단위의 논리 크기
+    let VIEW_W = 0, VIEW_H = 0;
     function resizeCanvas(){
       const dpr = window.devicePixelRatio || 1;
       const rect = cvs.getBoundingClientRect();
@@ -162,11 +188,14 @@
       cvs.width  = Math.round(VIEW_W * dpr);
       cvs.height = Math.round(VIEW_H * dpr);
       ctx.setTransform(1,0,0,1,0,0);
-      ctx.scale(dpr, dpr);        // 이후 그리기는 CSS px 단위
+      ctx.scale(dpr, dpr);
     }
-    window.addEventListener('resize', resizeCanvas);
-    if (window.visualViewport) {
-      visualViewport.addEventListener('resize', resizeCanvas); // iOS 키보드/툴바 변화 대응
+    window.addEventListener('resize', ()=>{ resizeCanvas(); updateInputbarHeight(); });
+
+    /* ===== 입력창 높이 → CSS 변수 반영 (데스크탑 오버레이 위치 보정) ===== */
+    function updateInputbarHeight(){
+      const h = Math.ceil(inputbarEl.getBoundingClientRect().height);
+      root.style.setProperty('--inputbar-h', h + 'px');
     }
 
     /* ===== Audio (WebAudio) ===== */
@@ -304,7 +333,7 @@
         ctx.fillText(w.text, w.x, w.y);
       }
 
-      // Bottom panel (visual baseline)
+      // Bottom panel
       ctx.fillStyle = '#1e2127';
       ctx.fillRect(0, VIEW_H - 84, VIEW_W, 84);
       ctx.fillStyle = '#3c4148';
@@ -389,41 +418,40 @@
       startTime = performance.now();
       setupLevel(1);
       requestAnimationFrame(draw);
-      typebox.focus({ preventScroll:true });
+      try { typebox.focus({ preventScroll:true }); } catch(_) { typebox.focus(); }
       startBGM();
     }
 
-    // Input
+    // ===== Input (엔터 재시작 포함) =====
     typebox.addEventListener('keydown', (e)=>{
-      if (e.key === 'Enter' && !gameOver){
+      if (e.key === 'Enter'){
+        if (gameOver){ start(); e.preventDefault(); return; }
         const typed = typebox.value.trim();
         if (!typed) return;
         const idx = active.findIndex(w => w.text === typed);
         if (idx !== -1){
           const w = active[idx];
           active.splice(idx,1);
-
-          scoreWords += 1;
-          correctChars += typed.length;
-          clearedThisLevel++;
-
+          scoreWords += 1; correctChars += typed.length; clearedThisLevel++;
           scoreEl.textContent = scoreWords;
           progressEl.textContent = `${clearedThisLevel}/${WORDS_PER_LEVEL}`;
-
           playExplosion();
           for (let i=0;i<24;i++){
             particles.push({x:w.x+40,y:w.y+12,vx:randFloat(-150,150),vy:randFloat(-220,-40),life:randFloat(.35,.6),dt:1/60,r:randFloat(2,4)});
           }
           if (clearedThisLevel >= WORDS_PER_LEVEL) {
-            if (level >= MAX_LEVEL) finalize('win');
-            else setTimeout(() => setupLevel(level + 1), 600);
+            if (level >= MAX_LEVEL) finalize('win'); else setTimeout(() => setupLevel(level + 1), 600);
           }
         }
         typebox.value = '';
       }
     });
+    window.addEventListener('keydown', (e)=>{
+      if (gameOver && e.key === 'Enter'){ start(); }
+    });
     fireBtn.addEventListener('click', ()=>{
-      typebox.focus({ preventScroll:true });
+      if (gameOver){ start(); return; }
+      try { typebox.focus({ preventScroll:true }); } catch(_) { typebox.focus(); }
       const e = new KeyboardEvent('keydown', {key:'Enter'}); typebox.dispatchEvent(e);
     });
     goRestart.addEventListener('click', start);
@@ -493,8 +521,9 @@
 
     // ===== Boot =====
     window.addEventListener('load', ()=>{
-      resizeCanvas();   // 먼저 캔버스 논리/물리 크기 일치
-      start();          // 게임 시작 (자동 시작)
+      resizeCanvas();
+      updateInputbarHeight();  // 데스크탑 오버레이 위치 계산
+      start();                 // 자동 시작
     });
 
     // iOS 오디오 잠금 해제
